@@ -1,0 +1,11 @@
+import pandas as pd
+df = pd.read_csv("sales_data.csv")
+
+total_revenue = df["Total_Sales"].sum()
+print("Total Revenue: ₹{:,.2f}".format(total_revenue))
+
+lowest_sales = df["Total_Sales"].min()
+print("Lowest Sales: ₹{:,.2f}".format(lowest_sales))
+
+highest_sales = df["Total_Sales"].max()
+print("Highest Sales: ₹{:,.2f}".format(highest_sales))
