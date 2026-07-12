@@ -1,0 +1,109 @@
+import pandas as pd
+import matplotlib
+import seaborn as sns
+
+print(f"Pandas version: {pd.__version__}")
+print(f"Seaborn version: {sns.__version__}")
+
+# Load your datasets
+sales_df = pd.read_csv('sales_data (2).csv')
+churn_df = pd.read_csv('customer_churn.csv')
+
+# Check initial structure
+print(sales_df.info())
+print(churn_df.info())
+
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# ==========================================
+# 1. Data Loading & Exploration
+# ==========================================
+sales_df = pd.read_csv('sales_data (2).csv')
+churn_df = pd.read_csv('customer_churn.csv')
+
+print("--- Data Inspection ---")
+print(f"Sales Data Shape: {sales_df.shape}")
+print(f"Churn Data Shape: {churn_df.shape}")
+
+# Day 2: Data Cleaning
+# Convert Date to datetime
+sales_df['Date'] = pd.to_datetime(sales_df['Date'])
+
+# Check for missing values
+print("\nMissing Values in Sales:", sales_df.isnull().sum().sum())
+print("Missing Values in Churn:", churn_df.isnull().sum().sum())
+
+# ==========================================
+# 2. Data Merging
+# ==========================================
+# NOTE: Ensure the ID format matches (e.g., CUST001 vs C00001). 
+# If they differ, you may need a mapping function here.
+# Assuming standard merge:
+combined_df = pd.merge(sales_df, churn_df, 
+                       left_on='Customer_ID', 
+                       right_on='CustomerID', 
+                       how='left')
+
+# ==========================================
+# 3. Aggregations (Technical Requirement)
+# ==========================================
+
+# Aggregation 1: Total Revenue by Region
+region_sales = combined_df.groupby('Region')['Total_Sales'].sum().reset_index()
+
+# Aggregation 2: Best-selling Products (Quantity & Revenue)
+product_perf = combined_df.groupby('Product').agg({
+    'Quantity': 'sum',
+    'Total_Sales': 'mean'
+}).rename(columns={'Total_Sales': 'Avg_Transaction_Value'})
+
+# Aggregation 3: Customer Performance (Top Customers)
+top_customers = combined_df.groupby('Customer_ID')['Total_Sales'].sum().sort_values(ascending=False).head(10)
+
+# ==========================================
+# 4. Pivot Tables
+# ==========================================
+pivot_table = pd.pivot_table(combined_df, 
+                             values='Total_Sales', 
+                             index='Region', 
+                             columns='Product', 
+                             aggfunc='sum', 
+                             fill_value=0)
+
+# ==========================================
+# 5. Visualizations
+# ==========================================
+plt.figure(figsize=(14, 10))
+
+# Plot 1: Sales by Region (Bar Chart)
+plt.subplot(2, 2, 1)
+sns.barplot(data=region_sales, x='Region', y='Total_Sales', palette='viridis')
+plt.title('Total Sales by Region')
+
+# Plot 2: Pivot Heatmap
+plt.subplot(2, 2, 2)
+sns.heatmap(pivot_table, annot=True, fmt=',.0f', cmap='YlGnBu')
+plt.title('Heatmap: Regional Product Performance')
+
+# Plot 3: Sales Trend Over Time
+plt.subplot(2, 2, 3)
+sales_by_date = combined_df.groupby('Date')['Total_Sales'].sum().reset_index()
+sns.lineplot(data=sales_by_date, x='Date', y='Total_Sales')
+plt.title('Daily Sales Trends')
+
+# Plot 4: Product Distribution
+plt.subplot(2, 2, 4)
+sns.boxplot(data=combined_df, x='Product', y='Total_Sales')
+plt.title('Transaction Value Distribution by Product')
+
+plt.tight_layout()
+plt.show()
+
+# ==========================================
+# 6. Export Report
+# ==========================================
+# Export cleaned data for the PDF report
+combined_df.to_csv('cleaned_sales_data.csv', index=False)
+print("Analysis complete. Cleaned data saved to 'cleaned_sales_data.csv'.")
