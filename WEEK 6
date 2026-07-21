@@ -1,0 +1,186 @@
+# ==========================================================
+# SALES DASHBOARD - SINGLE PYTHON CODE
+# Requirements:
+# ✔ Seaborn Statistical Plots
+# ✔ At least 5 Different Charts
+# ✔ Plotly Interactive Dashboard
+# ✔ Professional Color Scheme
+# ==========================================================
+
+# ---------------- INSTALL PACKAGES ----------------
+# Run this only once (Jupyter/Colab)
+!pip install pandas numpy matplotlib seaborn plotly openpyxl -q
+
+# ---------------- IMPORT LIBRARIES ----------------
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+import plotly.express as px
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+
+# ---------------- SETTINGS ----------------
+sns.set_theme(style="darkgrid")
+plt.rcParams["figure.figsize"] = (10,6)
+
+colors = ["#1F77B4", "#FF7F0E", "#2CA02C", "#D62728", "#9467BD"]
+
+# ---------------- LOAD DATA ----------------
+df = pd.read_csv("sales_data (3).csv")
+
+print("Dataset Shape:", df.shape)
+print(df.head())
+
+# ==========================================================
+# 1. BAR CHART (Category Sales)
+# ==========================================================
+if "Category" in df.columns and "Total_Sales" in df.columns:
+    plt.figure(figsize=(8,5))
+    sns.barplot(data=df, x="Category", y="Total_Sales", palette=colors)
+    plt.title("Sales by Category")
+    plt.xticks(rotation=45)
+    plt.show()
+
+# ==========================================================
+# 2. LINE CHART (Monthly Sales)
+# ==========================================================
+if "Month" in df.columns and "Total_Sales" in df.columns:
+    monthly = df.groupby("Month")["Total_Sales"].sum().reset_index()
+
+    plt.figure(figsize=(10,5))
+    sns.lineplot(data=monthly,
+                 x="Month",
+                 y="Total_Sales",
+                 marker="o",
+                 color=colors[0])
+    plt.title("Monthly Sales Trend")
+    plt.show()
+
+# ==========================================================
+# 3. HISTOGRAM
+# ==========================================================
+if "Total_Sales" in df.columns:
+    plt.figure(figsize=(8,5))
+    sns.histplot(df["Total_Sales"],
+                 bins=20,
+                 kde=True,
+                 color=colors[2])
+    plt.title("Sales Distribution")
+    plt.show()
+
+# ==========================================================
+# 4. BOXPLOT
+# ==========================================================
+if "Category" in df.columns and "Total_Sales" in df.columns:
+    plt.figure(figsize=(8,5))
+    sns.boxplot(data=df,
+                x="Category",
+                y="Total_Sales",
+                palette=colors)
+    plt.title("Category vs Sales")
+    plt.xticks(rotation=45)
+    plt.show()
+
+# ==========================================================
+# 5. HEATMAP
+# ==========================================================
+plt.figure(figsize=(8,6))
+sns.heatmap(df.corr(numeric_only=True),
+            annot=True,
+            cmap="coolwarm")
+plt.title("Correlation Heatmap")
+plt.show()
+
+# ==========================================================
+# INTERACTIVE PLOTLY PIE CHART
+# ==========================================================
+if "Category" in df.columns and "Total_Sales" in df.columns:
+    pie = px.pie(df,
+                 names="Category",
+                 values="Total_Sales",
+                 title="Sales Distribution by Category",
+                 color_discrete_sequence=px.colors.qualitative.Set2)
+    pie.show()
+
+# ==========================================================
+# INTERACTIVE PROFESSIONAL DASHBOARD
+# ==========================================================
+fig = make_subplots(
+    rows=2,
+    cols=2,
+    subplot_titles=[
+        "Category Sales",
+        "Monthly Sales",
+        "Sales Distribution",
+        "Top Products"
+    ]
+)
+
+# Bar Chart
+if "Category" in df.columns and "Total_Sales" in df.columns:
+    cat = df.groupby("Category")["Total_Sales"].sum()
+
+    fig.add_trace(
+        go.Bar(
+            x=cat.index,
+            y=cat.values,
+            marker_color="royalblue",
+            name="Category Sales"
+        ),
+        row=1,
+        col=1
+    )
+
+# Line Chart
+if "Month" in df.columns and "Total_Sales" in df.columns:
+    monthly = df.groupby("Month")["Total_Sales"].sum()
+
+    fig.add_trace(
+        go.Scatter(
+            x=monthly.index,
+            y=monthly.values,
+            mode="lines+markers",
+            line=dict(color="green"),
+            name="Monthly Sales"
+        ),
+        row=1,
+        col=2
+    )
+
+# Histogram
+if "Total_Sales" in df.columns:
+    fig.add_trace(
+        go.Histogram(
+            x=df["Total_Sales"],
+            marker_color="orange",
+            name="Sales Distribution"
+        ),
+        row=2,
+        col=1
+    )
+
+# Top Products
+if "Product" in df.columns and "Total_Sales" in df.columns:
+    top = df.groupby("Product")["Total_Sales"].sum().nlargest(10)
+
+    fig.add_trace(
+        go.Bar(
+            x=top.index,
+            y=top.values,
+            marker_color="crimson",
+            name="Top Products"
+        ),
+        row=2,
+        col=2
+    )
+
+fig.update_layout(
+    title="Professional Sales Dashboard",
+    height=800,
+    width=1200,
+    template="plotly_dark",
+    showlegend=False
+)
+
+fig.show()
