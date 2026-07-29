@@ -1,0 +1,184 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+from scipy import stats
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import r2_score
+
+# -----------------------------
+# Load Dataset
+# -----------------------------
+df = pd.read_csv("sales_data (4).csv")
+
+print("="*70)
+print("STATISTICAL ANALYSIS REPORT")
+print("="*70)
+
+# -----------------------------
+# Select Numeric Columns
+# -----------------------------
+numeric_cols = df.select_dtypes(include=np.number).columns
+
+print("\nNUMERIC COLUMNS:")
+print(list(numeric_cols))
+
+# -----------------------------
+# Descriptive Statistics
+# -----------------------------
+print("\nDESCRIPTIVE STATISTICS")
+print(df[numeric_cols].describe())
+
+print("\nMean")
+print(df[numeric_cols].mean())
+
+print("\nMedian")
+print(df[numeric_cols].median())
+
+print("\nMode")
+print(df[numeric_cols].mode().iloc[0])
+
+print("\nStandard Deviation")
+print(df[numeric_cols].std())
+
+# -----------------------------
+# Histogram
+# -----------------------------
+for col in numeric_cols:
+    plt.figure(figsize=(6,4))
+    plt.hist(df[col], bins=10)
+    plt.title(f"Histogram of {col}")
+    plt.xlabel(col)
+    plt.ylabel("Frequency")
+    plt.show()
+
+# -----------------------------
+# Normality Test
+# -----------------------------
+print("\nNORMALITY TEST (Shapiro-Wilk)")
+for col in numeric_cols:
+    stat, p = stats.shapiro(df[col])
+    print(f"{col}: p-value = {p:.4f}")
+
+# -----------------------------
+# Correlation Analysis
+# -----------------------------
+print("\nCORRELATION MATRIX")
+corr = df[numeric_cols].corr()
+print(corr)
+
+plt.figure(figsize=(8,6))
+sns.heatmap(corr, annot=True, cmap="coolwarm")
+plt.title("Correlation Heatmap")
+plt.show()
+
+# -----------------------------
+# Hypothesis Test 1
+# One Sample T-Test
+# -----------------------------
+col = numeric_cols[0]
+
+t_stat, p_val = stats.ttest_1samp(df[col], df[col].mean())
+
+print("\nHypothesis Test 1")
+print("One Sample T-Test")
+print("t =", t_stat)
+print("p =", p_val)
+
+# -----------------------------
+# Hypothesis Test 2
+# Independent T-Test
+# -----------------------------
+if len(numeric_cols) >= 2:
+
+    median_value = df[numeric_cols[1]].median()
+
+    group1 = df[df[numeric_cols[1]] <= median_value][col]
+    group2 = df[df[numeric_cols[1]] > median_value][col]
+
+    t_stat, p_val = stats.ttest_ind(group1, group2)
+
+    print("\nHypothesis Test 2")
+    print("Independent T-Test")
+    print("t =", t_stat)
+    print("p =", p_val)
+
+# -----------------------------
+# Hypothesis Test 3
+# ANOVA
+# -----------------------------
+if len(numeric_cols) >= 2:
+
+    median_value = df[numeric_cols[1]].median()
+
+    group1 = df[df[numeric_cols[1]] <= median_value][col]
+    group2 = df[df[numeric_cols[1]] > median_value][col]
+
+    f_stat, p_val = stats.f_oneway(group1, group2)
+
+    print("\nHypothesis Test 3")
+    print("ANOVA")
+    print("F =", f_stat)
+    print("p =", p_val)
+
+# -----------------------------
+# Confidence Interval
+# -----------------------------
+print("\n95% CONFIDENCE INTERVAL")
+
+for col in numeric_cols:
+
+    mean = df[col].mean()
+    sem = stats.sem(df[col])
+
+    ci = stats.t.interval(
+        confidence=0.95,
+        df=len(df[col])-1,
+        loc=mean,
+        scale=sem
+    )
+
+    print(f"{col}: {ci}")
+
+# -----------------------------
+# Linear Regression
+# -----------------------------
+if len(numeric_cols) >= 2:
+
+    X = df[[numeric_cols[0]]]
+    y = df[numeric_cols[1]]
+
+    model = LinearRegression()
+    model.fit(X, y)
+
+    predictions = model.predict(X)
+
+    r2 = r2_score(y, predictions)
+
+    print("\nLINEAR REGRESSION")
+    print("Intercept :", model.intercept_)
+    print("Slope     :", model.coef_[0])
+    print("R² Score  :", r2)
+
+    plt.figure(figsize=(6,4))
+    plt.scatter(X, y)
+    plt.plot(X, predictions, color="red")
+    plt.title("Linear Regression")
+    plt.xlabel(numeric_cols[0])
+    plt.ylabel(numeric_cols[1])
+    plt.show()
+
+# -----------------------------
+# Business Insights
+# -----------------------------
+print("\nBUSINESS INSIGHTS")
+
+highest_corr = corr.abs().unstack().sort_values(ascending=False)
+
+for pair, value in highest_corr.items():
+    if pair[0] != pair[1]:
+        print(f"Strongest Correlation: {pair[0]} & {pair[1]} = {value:.2f}")
+        break
+
+print("\nAnalysis Completed Successfully!")
